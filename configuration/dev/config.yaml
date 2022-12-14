@@ -1,0 +1,24 @@
+---
+definitions:
+  navigate:
+    type: 'navigate-step'
+    config:
+      url: 'https://httpbin.org/image'
+  validate:
+    type: 'validate-step'
+    config:
+      hash: 17361517852913336448
+      isolated: true
+  sleep:
+    type: 'wait-step'
+    config:
+      duration: '1s'
+flows:
+  httpbin:
+    config:
+      frequency: '@every 20s'
+      timeout: '15s'
+    steps:
+      - navigate
+      - sleep
+      - validate
