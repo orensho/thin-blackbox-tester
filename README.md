@@ -35,6 +35,9 @@ A thin Blackbox tester to fork from for your custom blackbox tester
 * Local: just run package 'github.com/orensho/thin-blackbox-tester/service/cmd/service' and default configuration will be used
 * Makefile: call ``makefile build_run_darwin``
 
+## Metrics
+Calling ``curl SERVER_LOCAL_LISTEN_IP:METRICS_PORT/metrics`` will return the blackbox tester current metrics
+
 ## Deployment
 
 Your containerized blackbox tester should be deployed on a workload to provide availability<br />
