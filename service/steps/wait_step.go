@@ -56,7 +56,7 @@ func (s *waitStep) Init(name string, input map[string]interface{}) error {
 	return nil
 }
 
-func (s *waitStep) Run(logger *log.Entry, proxy string) chromedp.Tasks {
+func (s *waitStep) Run(logger *log.Entry) chromedp.Tasks {
 	logger.Infof("Waiting for %s", s.conf.Duration)
 
 	return chromedp.Tasks{

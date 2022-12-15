@@ -10,19 +10,16 @@ import (
 	"go.opencensus.io/tag"
 )
 
-//go:generate mockery -name MetricsServiceInterface -inpkg -case=underscore -output MockMetricsServiceInterface
 type MetricsServiceInterface interface {
-	ReportStepTestSuccess(ctx context.Context, flowName string, stepName string, proxyName string, customerName string) error
-	ReportStepTestError(ctx context.Context, flowName string, stepName string, proxyName string, customerName string) error
-	ReportStepTestTimeout(ctx context.Context, flowName string, stepName string, proxyName string, customerName string) error
-	ReportStepTestDuration(ctx context.Context, flowName string, ms float64, stepName string, proxyName string, customerName string) error
+	ReportStepTestSuccess(ctx context.Context, flowName string, stepName string) error
+	ReportStepTestError(ctx context.Context, flowName string, stepName string) error
+	ReportStepTestTimeout(ctx context.Context, flowName string, stepName string) error
+	ReportStepTestDuration(ctx context.Context, flowName string, ms float64, stepName string) error
 }
 
 var (
 	keyFlow        = tag.MustNewKey("flow")
 	keyStep        = tag.MustNewKey("step")
-	keyProxy       = tag.MustNewKey("proxy")
-	keyCustomer    = tag.MustNewKey("customer")
 	keyEnvironment = tag.MustNewKey("environment")
 )
 
@@ -47,8 +44,8 @@ func NewMetricsService(settings *config.MetricsSettings) (MetricsServiceInterfac
 	return s, nil
 }
 
-func (s *metricsService) ReportStepTestSuccess(ctx context.Context, flowName string, stepName string, proxyName string, customerName string) error { //nolint // line length
-	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName, proxyName, customerName)
+func (s *metricsService) ReportStepTestSuccess(ctx context.Context, flowName string, stepName string) error { //nolint // line length
+	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName)
 	if err != nil {
 		return errors.Wrap(err, "Failed setting tags on context")
 	}
@@ -58,8 +55,8 @@ func (s *metricsService) ReportStepTestSuccess(ctx context.Context, flowName str
 	return nil
 }
 
-func (s *metricsService) ReportStepTestError(ctx context.Context, flowName string, stepName string, proxyName string, customerName string) error { //nolint // line length
-	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName, proxyName, customerName)
+func (s *metricsService) ReportStepTestError(ctx context.Context, flowName string, stepName string) error { //nolint // line length
+	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName)
 	if err != nil {
 		return errors.Wrap(err, "Failed setting tags on context")
 	}
@@ -69,8 +66,8 @@ func (s *metricsService) ReportStepTestError(ctx context.Context, flowName strin
 	return nil
 }
 
-func (s *metricsService) ReportStepTestTimeout(ctx context.Context, flowName string, stepName string, proxyName string, customerName string) error { //nolint // line length
-	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName, proxyName, customerName)
+func (s *metricsService) ReportStepTestTimeout(ctx context.Context, flowName string, stepName string) error { //nolint // line length
+	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName)
 	if err != nil {
 		return errors.Wrap(err, "Failed setting tags on context")
 	}
@@ -80,8 +77,8 @@ func (s *metricsService) ReportStepTestTimeout(ctx context.Context, flowName str
 	return nil
 }
 
-func (s *metricsService) ReportStepTestDuration(ctx context.Context, flowName string, ms float64, stepName string, proxyName string, customerName string) error { //nolint // line length
-	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName, proxyName, customerName)
+func (s *metricsService) ReportStepTestDuration(ctx context.Context, flowName string, ms float64, stepName string) error { //nolint // line length
+	ctx, err := s.createStepMeasurementContext(ctx, flowName, stepName)
 	if err != nil {
 		return errors.Wrap(err, "Failed setting tags on context")
 	}
@@ -91,12 +88,10 @@ func (s *metricsService) ReportStepTestDuration(ctx context.Context, flowName st
 	return nil
 }
 
-func (s *metricsService) createStepMeasurementContext(ctx context.Context, flowName string, stepName string, proxyName string, customerName string) (context.Context, error) { //nolint // line length
+func (s *metricsService) createStepMeasurementContext(ctx context.Context, flowName string, stepName string) (context.Context, error) { //nolint // line length
 	return tag.New(ctx,
 		tag.Upsert(keyFlow, flowName),
 		tag.Upsert(keyStep, stepName),
-		tag.Upsert(keyProxy, proxyName),
-		tag.Upsert(keyCustomer, customerName),
 		tag.Upsert(keyEnvironment, s.settings.Environment))
 }
 
@@ -115,7 +110,7 @@ func (s *metricsService) initMetrics() error {
 		// [>=0ms, >=500ms, >=1s, >=10s, >=30s, >=60s, >=90s, >=120s]
 		//nolint:gomnd //false positive
 		Aggregation: view.Distribution(500, 1000, 10000, 30000, 60000, 90000, 120000),
-		TagKeys:     []tag.Key{keyFlow, keyStep, keyProxy, keyCustomer, keyEnvironment},
+		TagKeys:     []tag.Key{keyFlow, keyStep, keyEnvironment},
 	}
 
 	errorStepCountView := &view.View{
@@ -123,7 +118,7 @@ func (s *metricsService) initMetrics() error {
 		Measure:     s.testsStepErrors,
 		Description: "The number of failed steps",
 		Aggregation: view.Count(),
-		TagKeys:     []tag.Key{keyFlow, keyStep, keyProxy, keyCustomer, keyEnvironment},
+		TagKeys:     []tag.Key{keyFlow, keyStep, keyEnvironment},
 	}
 
 	successStepCountView := &view.View{
@@ -131,7 +126,7 @@ func (s *metricsService) initMetrics() error {
 		Measure:     s.testsStepSuccess,
 		Description: "The number of successful steps",
 		Aggregation: view.Count(),
-		TagKeys:     []tag.Key{keyFlow, keyStep, keyProxy, keyCustomer, keyEnvironment},
+		TagKeys:     []tag.Key{keyFlow, keyStep, keyEnvironment},
 	}
 
 	timeoutStepCountView := &view.View{
@@ -139,7 +134,7 @@ func (s *metricsService) initMetrics() error {
 		Measure:     s.testsStepTimeout,
 		Description: "The number of steps timeouts",
 		Aggregation: view.Count(),
-		TagKeys:     []tag.Key{keyFlow, keyStep, keyProxy, keyCustomer, keyEnvironment},
+		TagKeys:     []tag.Key{keyFlow, keyStep, keyEnvironment},
 	}
 
 	// Register the views

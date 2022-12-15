@@ -46,13 +46,10 @@ func (s *navigateStep) Init(name string, input map[string]interface{}) error {
 	return nil
 }
 
-func (s *navigateStep) Run(logger *log.Entry, proxy string) chromedp.Tasks {
+func (s *navigateStep) Run(logger *log.Entry) chromedp.Tasks {
 	logger.Infof("navigating to %s", s.conf.URL)
 
 	return chromedp.Tasks{
 		chromedp.Navigate(s.conf.URL),
-		// wait for page elements
-		chromedp.WaitReady(`/html/body/p`, chromedp.NodeVisible),
-		chromedp.WaitReady(`img`, chromedp.NodeVisible, chromedp.ByQuery),
 	}
 }

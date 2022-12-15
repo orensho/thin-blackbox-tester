@@ -7,8 +7,8 @@ definitions:
   validate:
     type: 'validate-step'
     config:
-      hash: 17361517852913336448
-      isolated: true
+      selector: 'img'
+      hash: '02f4e7bf5f3df71e6b971e1c0d554874'
   sleep:
     type: 'wait-step'
     config:
@@ -16,7 +16,7 @@ definitions:
 flows:
   httpbin:
     config:
-      frequency: '@every 20s'
+      frequency: '@every 10s'
       timeout: '15s'
     steps:
       - navigate

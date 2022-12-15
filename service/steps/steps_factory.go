@@ -4,7 +4,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name StepFactoryInterface -inpkg -case=underscore -output MockStepFactoryInterface
 type StepFactoryInterface interface {
 	NewStep(stepType string) (StepInterface, error)
 }

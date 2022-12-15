@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"contrib.go.opencensus.io/exporter/prometheus"
@@ -13,25 +14,10 @@ import (
 
 	"net/http"
 	"os"
-	"time"
 )
 
-const blockingTimeout = 5 * time.Second
-
 func main() {
-	// disable the logger until reading the logger configuration
-	log.SetLevel(log.PanicLevel)
-
-	configReader := config.NewFigBlackboxConfigReader()
-	logSettings, err := configReader.LoadLoggerSettings()
-	if err != nil {
-		logSettings = &logging.LoggerSettings{}
-		log.Warn("Couldn't load logger settings")
-	}
-	logSettings.ServiceName = "fg-blackbox"
-
-	logger := logging.InitLogger(logSettings)
-	defer logger.Close()
+	configReader := config.NewBlackboxConfigReader()
 
 	c, _ := os.Getwd()
 	log.Infof("CWD: %v", c)
@@ -41,7 +27,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	rootCtx := app_context.NewRootAppContext()
+	ctx := context.Background()
 
 	serviceFactory, err := service.NewServiceFactory(configService)
 	if err != nil {
@@ -49,7 +35,7 @@ func main() {
 	}
 
 	testManager := tester.NewManager(
-		rootCtx.GetContext(),
+		ctx,
 		steps.NewStepFactory(),
 		serviceFactory.ConfigurationService.TesterSettings,
 		serviceFactory.MetricsService,
@@ -60,7 +46,7 @@ func main() {
 		log.WithError(err).Panic("failed initiating test manager")
 	}
 
-	FgBlackbox := server.NewFgBlackboxServer(configService.ServerSettings, serviceFactory)
+	FgBlackbox := server.NewBlackboxServer(configService.ServerSettings)
 
 	if configService.MetricsSettings.Enabled {
 		pe, err := prometheus.NewExporter(prometheus.Options{
@@ -80,14 +66,11 @@ func main() {
 		}()
 	}
 
-	forkContext := rootCtx.CreateFork()
-
 	go func() {
 		err := FgBlackbox.Start()
 		if err != http.ErrServerClosed {
 			log.WithField("error", err).Error("Failed to start fg-blackbox.")
 		}
-		forkContext.FinishBlocking(blockingTimeout)
 	}()
 
 	// start test manager
@@ -95,5 +78,4 @@ func main() {
 	defer testManager.Stop()
 
 	FgBlackbox.WaitForShutdown()
-	rootCtx.FinishBlocking(blockingTimeout)
 }

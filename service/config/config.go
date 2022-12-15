@@ -2,71 +2,47 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
-
+	envParser "github.com/caarlos0/env"
 	"github.com/hashicorp/go-multierror"
-
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+	"io/ioutil"
+	"os"
+	"path"
 )
 
-// Supplies Loaded Evaluated and Validated configuration
-type FgBlackboxConfigReader struct {
-	*conf.ConfigReader
+type BlackboxConfigReader struct {
 }
 
-func NewFigBlackboxConfigReader() FgBlackboxConfigReader {
-	r := FgBlackboxConfigReader{}
-	r.Init()
+func NewBlackboxConfigReader() BlackboxConfigReader {
+	r := BlackboxConfigReader{}
 
 	return r
 }
 
-func (c *FgBlackboxConfigReader) LoadProxiesSettings() (*ProxiesSettings, error) {
-	proxies := ProxiesSettings{}
-
-	return &proxies, nil
-}
-
-func (c *FgBlackboxConfigReader) LoadLoggerSettings() (*logging.LoggerSettings, error) {
-	loggerConfig := logging.LoggerSettings{}
-	err := c.LoadEnvironmentVariables(&loggerConfig)
-
-	return &loggerConfig, err
-}
-
-func (c *FgBlackboxConfigReader) LoadAdministrativeSettings() (*AdministrativeSettings, error) {
-	administrativeSettings := AdministrativeSettings{}
-	err := c.LoadEnvironmentVariables(&administrativeSettings)
-
-	return &administrativeSettings, err
-}
-
-func (c *FgBlackboxConfigReader) LoadServerSettings() (*ServerSettings, error) {
+func (c *BlackboxConfigReader) LoadServerSettings() (*ServerSettings, error) {
 	serverSettings := ServerSettings{}
-	err := c.LoadEnvironmentVariables(&serverSettings)
+	err := loadEnvironmentVariables(&serverSettings)
 
 	return &serverSettings, err
 }
 
-func (c *FgBlackboxConfigReader) LoadTesterSettings() (*TesterSettings, error) {
+func (c *BlackboxConfigReader) LoadTesterSettings() (*TesterSettings, error) {
 	testerSettings := TesterSettings{}
-	err := c.LoadEnvironmentVariables(&testerSettings)
+	err := loadEnvironmentVariables(&testerSettings)
 
 	return &testerSettings, err
 }
 
-func (c *FgBlackboxConfigReader) LoadMetricsSettings() (*MetricsSettings, error) {
+func (c *BlackboxConfigReader) LoadMetricsSettings() (*MetricsSettings, error) {
 	metricsSettings := MetricsSettings{}
-	err := c.LoadEnvironmentVariables(&metricsSettings)
+	err := loadEnvironmentVariables(&metricsSettings)
 
 	return &metricsSettings, err
 }
 
-func (c *FgBlackboxConfigReader) LoadTesterConfig(testerSettings *TesterSettings) (*TesterConfig, error) {
+func (c *BlackboxConfigReader) LoadTesterConfig(testerSettings *TesterSettings) (*TesterConfig, error) {
 	testerConfig := TesterConfig{}
 	configFilePath := path.Join(testerSettings.ConfigFolder, testerSettings.Environment, testerSettings.ConfigFilename)
 	yamlFile, err := ioutil.ReadFile(configFilePath)
@@ -101,10 +77,24 @@ func expendEnvVars(text string) (string, error) {
 	return yamlFileWithEnv, missingVars.ErrorOrNil()
 }
 
-func (c *FgBlackboxConfigReader) Init() {
-	// Load environment variables from configuration file
-	err := c.LoadEnvironmentVariablesFromFile()
+func loadEnvironmentVariables(settings SettingsInterface) error {
+
+	err := envParser.Parse(settings)
 	if err != nil {
-		log.WithError(err).Warn("Unable to load configuration file. Continue with environment variables.")
+
+		return errors.Wrap(err, "Failed to load environment variables.")
 	}
+
+	if err := settings.Validate(); err != nil {
+
+		return errors.Wrap(err, "setting validation failed, recheck your settings")
+	}
+
+	if err := settings.Evaluate(); err != nil {
+
+		return errors.Wrap(err, "settings evaluation failed, recheck your settings")
+	}
+
+	log.Infof("Loaded Settings %#v", settings)
+	return nil
 }

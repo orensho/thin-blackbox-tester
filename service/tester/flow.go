@@ -15,9 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const poolWorkers = 250
-const poolQueueDepth = 125
-
 type flow struct {
 	name           string
 	config         config.FlowConfig
@@ -64,31 +61,30 @@ func (f *flow) Run() {
 	})
 	logger.Infof("Starting flow %s", f.name)
 
-	browserCtx, cancelFunc := f.createTabContext(logger, &config.Proxy{Customer: "none", Hostname: "none"})
+	browserCtx, cancelFunc := f.createTabContext(logger)
 	defer cancelFunc() // releases resources
-	f.stepsRun(browserCtx, logger, &config.Proxy{Customer: "none", Hostname: "none"})
+	f.stepsRun(browserCtx, logger)
 
 	logger.Infof("Finished flow successfully %s", f.name)
 }
 
-func (f *flow) stepsRun(browserCtx context.Context, logger *log.Entry, proxy *config.Proxy) {
+func (f *flow) stepsRun(browserCtx context.Context, logger *log.Entry) {
 	for _, step := range f.steps {
 		step := step // avoid closure
 
 		logger = logger.WithFields(log.Fields{
-			"step":  step.GetName(),
-			"proxy": proxy.Hostname,
+			"step": step.GetName(),
 		})
 
 		logger.Infof("executing step '%s'", step.GetName())
 		stepStartTime := time.Now()
 
 		// execute the tasks returned from the step
-		err := chromedp.Run(browserCtx, step.Run(logger, proxy.Hostname))
+		err := chromedp.Run(browserCtx, step.Run(logger))
 
 		ms := float64(time.Since(stepStartTime).Nanoseconds()) / 1e6
 		logger.Infof("flow duration %fms", ms)
-		errMetrics := f.metricsService.ReportStepTestDuration(browserCtx, f.name, ms, step.GetName(), proxy.Hostname, proxy.Hostname)
+		errMetrics := f.metricsService.ReportStepTestDuration(browserCtx, f.name, ms, step.GetName())
 		if errMetrics != nil {
 			logger.WithError(errMetrics).Error("failed reporting step duration")
 		}
@@ -96,7 +92,7 @@ func (f *flow) stepsRun(browserCtx context.Context, logger *log.Entry, proxy *co
 		// failure
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
-				errReport := f.metricsService.ReportStepTestTimeout(f.rootCtx, f.name, step.GetName(), proxy.Hostname, proxy.Hostname)
+				errReport := f.metricsService.ReportStepTestTimeout(f.rootCtx, f.name, step.GetName())
 				if errReport != nil {
 					logger.WithError(errReport).Error("failed reporting step timeout")
 				}
@@ -104,7 +100,7 @@ func (f *flow) stepsRun(browserCtx context.Context, logger *log.Entry, proxy *co
 				logger.WithError(err).
 					Errorf("flow timeout after %s in step '%s'", f.timeout.String(), step.GetName())
 			} else {
-				errReport := f.metricsService.ReportStepTestError(f.rootCtx, f.name, step.GetName(), proxy.Hostname, proxy.Hostname)
+				errReport := f.metricsService.ReportStepTestError(f.rootCtx, f.name, step.GetName())
 				if errReport != nil {
 					logger.WithError(errReport).Error("failed reporting step error")
 				}
@@ -125,7 +121,7 @@ func (f *flow) stepsRun(browserCtx context.Context, logger *log.Entry, proxy *co
 		}
 
 		// success
-		err = f.metricsService.ReportStepTestSuccess(f.rootCtx, f.name, step.GetName(), proxy.Hostname, proxy.Hostname)
+		err = f.metricsService.ReportStepTestSuccess(f.rootCtx, f.name, step.GetName())
 		if err != nil {
 			logger.WithError(err).Error("failed reporting step success")
 		}
@@ -133,7 +129,7 @@ func (f *flow) stepsRun(browserCtx context.Context, logger *log.Entry, proxy *co
 	}
 }
 
-func (f *flow) createTabContext(logger *log.Entry, proxy *config.Proxy) (context.Context, context.CancelFunc) {
+func (f *flow) createTabContext(logger *log.Entry) (context.Context, context.CancelFunc) {
 	// create flow context with timeout
 	flowContext, flowCancel := context.WithTimeout(f.rootCtx, f.timeout)
 

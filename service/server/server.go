@@ -3,12 +3,10 @@ package server
 import (
 	"context"
 	"github.com/orensho/thin-slack-blackbox-tester/service/config"
-	"github.com/orensho/thin-slack-blackbox-tester/service/service"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
-	"sync/atomic"
 	"syscall"
 )
 
@@ -21,13 +19,7 @@ type BlackboxServer struct {
 	serverSettings *config.ServerSettings
 }
 
-func Must(err error) {
-	if err != nil {
-		log.WithError(err).Panic("oops...")
-	}
-}
-
-func NewFgBlackboxServer(serverSettings *config.ServerSettings, serviceFactory *service.Factory) *BlackboxServer {
+func NewBlackboxServer(serverSettings *config.ServerSettings) *BlackboxServer {
 	log.Info("Starting thin-blackbox-tester ...")
 
 	server := &BlackboxServer{
@@ -75,19 +67,4 @@ func (as *BlackboxServer) Start() error {
 	log.Infof("starting http server on %s:%s", as.serverSettings.LocalListenIP, as.serverSettings.LocalListenPort)
 
 	return as.ListenAndServe()
-}
-
-func (as *BlackboxServer) TriggerShutdown() {
-	// Do nothing if shutdown request already issued:
-	// if as.isInShutdown == 0 then set to 1 and return true
-	// if as.isInShutdown != 0 do nothing and return false
-	if !atomic.CompareAndSwapUint32(&as.isInShutdown, 0, 1) {
-		log.Info("Shutdown is already in progress...")
-
-		return
-	}
-
-	go func() {
-		as.shutdownChan <- true
-	}()
 }

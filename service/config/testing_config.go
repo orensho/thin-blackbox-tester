@@ -16,7 +16,6 @@ type Flow struct {
 }
 
 type FlowConfig struct {
-	Frequency       string  `yaml:"frequency"`
-	ParallelProxies bool    `yaml:"parallel-proxies"`
-	Timeout         *string `yaml:"timeout,omitempty"`
+	Frequency string  `yaml:"frequency"`
+	Timeout   *string `yaml:"timeout,omitempty"`
 }

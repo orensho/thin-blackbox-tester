@@ -1,9 +1,13 @@
 package config
 
+const (
+	MetricsEndpoint = "/metrics"
+)
+
 type MetricsSettings struct {
 	Enabled      bool   `env:"METRICS_ENABLE" envDefault:"true"`
 	Environment  string `env:"METRICS_ENVIRONMENT" envDefault:"local"`
-	MetricPrefix string `env:"METRICS_PREFIX" envDefault:"fg_blackbox"`
+	MetricPrefix string `env:"METRICS_PREFIX" envDefault:"thin_blackbox"`
 	MetricPort   string `env:"METRICS_PORT" envDefault:"8888"`
 }
 

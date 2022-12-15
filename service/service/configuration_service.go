@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func CreateConfigurationService(configReader config.FgBlackboxConfigReader) (*ConfigurationService, error) {
+func CreateConfigurationService(configReader config.BlackboxConfigReader) (*ConfigurationService, error) {
 	// Load Configuration
 	serverSettings, err := configReader.LoadServerSettings()
 	if err != nil {
@@ -27,17 +27,11 @@ func CreateConfigurationService(configReader config.FgBlackboxConfigReader) (*Co
 		return nil, errors.Wrap(err, "Failed Loading tester config")
 	}
 
-	proxiesSettings, err := configReader.LoadProxiesSettings()
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed Loading Proxies-Settings")
-	}
-
 	return &ConfigurationService{
 		ServerSettings:  serverSettings,
 		TesterSettings:  testerSettings,
 		TesterConfig:    testerConfig,
 		MetricsSettings: metricsSettings,
-		ProxiesSettings: proxiesSettings,
 	}, nil
 }
 
@@ -46,5 +40,4 @@ type ConfigurationService struct {
 	TesterSettings  *config.TesterSettings
 	TesterConfig    *config.TesterConfig
 	MetricsSettings *config.MetricsSettings
-	ProxiesSettings *config.ProxiesSettings
 }
