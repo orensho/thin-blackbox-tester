@@ -1,14 +1,15 @@
-# Fireglass Blackbox Tester #
+# thin Blackbox Tester #
 
-Fireglass Blackbox Tester is a Golang server that continuously test isolate and bypass navigation for all production tenants and reports results as metrics 
+[![Release](https://img.shields.io/github/release/orensho/thin-blackbox-tester/all.svg)](https://github.com/orensho/thin-blackbox-tester/latest)
+[![PkgGoDev](https://pkg.go.dev/badge/orensho/thin-blackbox-testert/)](https://github.com/orensho/thin-blackbox-tester/)
 
+I created this thin Blackbox tester to demonstrate how easy it is to build and automate your ASM testing
 
-## Run 
+## Description
 
-* Local: just run package 'github.com/orensho/thin-slack-blackbox-tester/service/cmd/service' and default configuration will be used
-* Kubernetes: wrap in deployment and supply the relevant environment variables
+A thin Blackbox tester to fork from for your custom blackbox tester
 
-## Environment variables
+## Required environment variables
 
 |Env-var                            | Required | Default Value | Description |
 |-----------------------------------|--------- |---------------|-------------|
@@ -16,41 +17,25 @@ Fireglass Blackbox Tester is a Golang server that continuously test isolate and 
 |**TESTER_CONFIG_FOLDER**|yes|configuration|folder of the exported config file|
 |**TESTER_SHOW_DEBUG_BROWSER**|no|false||
 |**TESTER_ENVIRONMENT**|yes|dev||
-|**TESTER_INSTANCE_NAME**|yes|dev|the tester shard instance|
 |**SERVER_LOCAL_LISTEN_IP**|yes|127.0.0.1||
 |**SERVER_LOCAL_LISTEN_PORT**|yes|8080||
 |**SERVER_SHUTDOWN_GRACE_PERIOD**|yes|10s||
 |**METRICS_ENABLE**|yes|true||
-|**METRICS_ENVIRONMENT**|yes|local||
-|**METRICS_PREFIX**|yes|fg_blackbox||
+|**METRICS_ENVIRONMENT**|yes|dev||
+|**METRICS_PREFIX**|yes|thin_blackbox||
 |**METRICS_PORT**|yes|8888||
 
 
 ## Endpoints
 
-* /info
-* /health
-* /shutdown
 * METRICS_PORT/metrics
 
-## Scale out
+## Build and Run
 
-To support hundreds and more of gateways to test, we will deploy BBOX as a statefulset with 2 replicas
-Each BBOX instance will perform hashedGatewayName % TESTER_INSTANCE_NAME ==0 to decide which gateways it should test
+* Local: just run package 'github.com/orensho/thin-blackbox-tester/service/cmd/service' and default configuration will be used
+* Makefile: call ``makefile build_run_darwin``
 
+## Deployment
 
-## Backlog
-
-- [x] Refactor to BBOX standards
-- [x] Review refactor PR
-- [x] Review flow
-- [x] Review navigate-step
-- [x] Integrate with new system rules
-- [x] Implement proxies-step
-- [x] Implement unit testing
-- [x] Implement TF for GCS bucket backed dummy website for isolation and pipeline
-- [x] Design build pipeline
-- [x] Implement build pipeline
-- [x] Design deploy pipeline
-- [x] Implement deploy pipeline
-- [x] Implement monitoring
+Your containerized blackbox tester should be deployed on a workload to provide availability<br />
+It is recommended to create a CI pipeline to automate deployment 

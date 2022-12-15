@@ -12,11 +12,11 @@ definitions:
   sleep:
     type: 'wait-step'
     config:
-      duration: '1s'
+      duration: '2s'
 flows:
   httpbin:
     config:
-      frequency: '@every 10s'
+      frequency: '@every 30s'
       timeout: '15s'
     steps:
       - navigate
