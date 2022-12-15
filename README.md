@@ -7,7 +7,7 @@ I created this thin Blackbox tester to demonstrate how easy it is to build and a
 
 ## Description
 
-A thin Blackbox tester to fork from for your custom blackbox tester
+A thin Blackbox tester using ChromeDP to fork from for your custom blackbox tester
 
 ## Required environment variables
 
